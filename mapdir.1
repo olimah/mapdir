@@ -1,0 +1,35 @@
+." Manpage for mapdir
+.".RI [ underlined ]
+.TH mapdir 1 "October 2017" "mapdir 1.0" "Manpage for mapdir"
+.SH NAME
+mapdir \- Map directory structures
+.SH SYNOPSIS
+.BR "mapdir " "[-fh] [-s savefile] [/path/to/file]"
+.SH DESCRIPTION
+mapdir is a shell script utility that maps the structure of files and most notably folder hierarchies. The results are stored in a report file in the invoking user's home directory, according to the following naming convention: mapdir_path_to_file_date.txt. If the file is a regular file, then mapdir also reports its size in bytes and the file's md5 checksum.
+
+The utility is useful in verifying the consistency of two (or more) file hierarchies, located on different devices, as the generated report files can subsequently be passed to the \fBdiff(1)\fR utility.
+
+.SH OPTIONS
+.TP
+.B -f
+omit reporting the name of the starting directory in the report file
+.TP
+.B -h
+use the sha256sum message digest instead of md5sum
+.TP
+.B -s savefile
+save the report in savefile
+.SH EXAMPLES
+.PP
+Verfiy the consistency between /path/to/dir1 and /path/to/dir2:
+.PP
+mapdir -f /path/to/dir1
+.br
+mapdir -f /path/to/dir2
+.br
+diff ~/mapdir_path_to_dir1_date.txt ~/mapdir_path_to_dir2_date.txt
+.SH BUGS
+Please report when found.
+.SH AUTHOR
+Oliver Mahmoudi (contact@olivermahmoudi.com)

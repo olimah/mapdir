@@ -1,0 +1,7 @@
+Installation of mapdir:
+To install mapdir simply run "make install" as root.
+Running the install target will copy the files:
+mapdir to /usr/local/bin and install the manpage mapdir.1 in /usr/local/man/man1
+
+Deinstalling backupuser:
+To deinstall backupuser run "make deinstall" as root.
