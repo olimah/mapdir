@@ -47,6 +47,8 @@ UNKNOWN=0
 SAVEIFS=$IFS			# save the current Internal Field Seperator
 IFS=$(echo -en "\n\b")		# and set a new one
 export LC_COLLATE=C
+# flags for getopts
+d_flag=0				# dotglob flag
 f_flag=0				# f flag for getopts
 h_flag=0				# use sha256sum flag
 s_flag=0
@@ -189,15 +191,17 @@ get_filename()
 
 usage()
 {
-	echo usage: mapdir.sh [-fh] [-s savefile] [file]||[directory]
+	echo usage: mapdir [-dfh] [-s savefile] [file]||[directory]
 	exit 1
 }
 
 ### Point of entry ###
 
-
-while getopts ":fhs:" opt ; do
+while getopts ":dfhs:" opt ; do
 	case $opt in
+		d)
+			d_flag=1
+			;;
 		f)
 			f_flag=1
 			;;
@@ -217,6 +221,10 @@ while getopts ":fhs:" opt ; do
 done
 
 shift $((OPTIND-1))
+
+if [ $d_flag -eq 0 ]; then
+	shopt -s dotglob
+fi
 
 # Change CHECKSUM to sha256sum
 if [ $h_flag -eq 1 ]; then
@@ -269,6 +277,10 @@ fi
 # Start processing the file/folder...
 
 readfile $READLINK 1
+
+#
+# At this point, we are done parsing.
+#
 
 echo
 echo >> $SAVEFILE
