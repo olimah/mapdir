@@ -29,8 +29,9 @@
 
 # variables
 READLINK=
-CHECKSUM=md5sum
+CHECKSUM=
 DATE=$(date +%m%d%Y)		# today
+OS_TYPE=$(uname)
 SAVEFILE=
 STRLEN=				# for nice output at the end
 # variables that are used for the statistics at the end of the program
@@ -226,13 +227,20 @@ if [ $d_flag -eq 0 ]; then
 	shopt -s dotglob
 fi
 
-# Change CHECKSUM to sha256sum
-if [ $h_flag -eq 1 ]; then
-	CHECKSUM=sha256sum
+if [ "${OS_TYPE}" = "Linux" ] ; then
+	CHECKSUM=md5sum
+	if [ $h_flag -eq 1 ]; then				# Change CHECKSUM to sha256sum
+		CHECKSUM=sha256sum
+	fi
+elif [ "${OS_TYPE}" = "FreeBSD" ] ; then
+	CHECKSUM=md5
+	if [ $h_flag -eq 1 ]; then				# Change CHECKSUM to sha256
+		CHECKSUM=sha256
+	fi
 fi
 
 #
-# if an argument is given, take it. otherwise process the current directory
+# If an argument is given, take it, otherwise process the current directory.
 #
 
 if [ $# -eq 1 ]; then
