@@ -24,8 +24,7 @@
 # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-# mapdir is a simple shell script that maps the structure and filetype of folders. If the file is a regular file, 
-# then besides mapping it in the folder hierarchy, mapdir also reports its size in bytes and the file's md5 checksum.
+# mapdir - A utility to map files and directory hierarchies
 
 # Functions:
 # readfile()
