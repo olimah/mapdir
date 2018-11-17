@@ -108,7 +108,7 @@ readfile()
 			_dir=$_file
 			cd $_dir
 			_contents=*
-			if [ ! -z $_contents ] ; then	# directory has contents
+			if [[ ! -z $_contents ]] ; then	# directory has contents
 				for _entry in $_contents ; do
 					_newpath=$_dir/"$_entry"
 					readfile $_newpath 0
