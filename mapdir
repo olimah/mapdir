@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2015-2016 Oliver Mahmoudi
+# Copyright (c) 2015-2018 Oliver Mahmoudi
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,10 +27,17 @@
 # mapdir is a simple shell script that maps the structure and filetype of folders. If the file is a regular file, 
 # then besides mapping it in the folder hierarchy, mapdir also reports its size in bytes and the file's md5 checksum.
 
-# variables
+# Functions:
+# readfile()
+# get_filename()
+# check_savefile_existence()
+# usage()
+
+# Variables:
 READLINK=
-CHECKSUM=md5sum
+CHECKSUM=
 DATE=$(date +%m%d%Y)		# today
+OS_TYPE=$(uname)
 SAVEFILE=
 STRLEN=				# for nice output at the end
 # variables that are used for the statistics at the end of the program
@@ -102,10 +109,12 @@ readfile()
 			_dir=$_file
 			cd $_dir
 			_contents=*
-			for _entry in $_contents ; do
-				_newpath=$_dir/"$_entry"
-				readfile $_newpath 0
-			done
+			if [ ! -z $_contents ] ; then	# directory has contents
+				for _entry in $_contents ; do
+					_newpath=$_dir/"$_entry"
+					readfile $_newpath 0
+				done
+			fi
 		else 
 			if [ $f_flag -eq 0 ]; then
 				echo $_file - directory is not readable
@@ -119,33 +128,47 @@ readfile()
 			UNREADABLE_DIRS=$((UNREADABLE_DIRS+1))		# gather statistics
 		fi
 	elif [ -f $_file ]; then
-		if [ -r $_file ]; then
-			if [ $f_flag -eq 0 ]; then
-				echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-				${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'`
-				echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-				${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'` >> $SAVEFILE
-			else
-				echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-				${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'`
-				echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-				${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'` >> $SAVEFILE
+		if [ -r $_file ]; then				# it's a readable file
+			if [ $f_flag -eq 0 ]; then		# log the entire path to the file
+				if [ "$OS_TYPE" = "Linux" ] ; then
+					echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'`
+					echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'` >> $SAVEFILE
+				elif [ "$OS_TYPE" = "FreeBSD" ] ; then
+					echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'`
+					echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'` >> $SAVEFILE
+				fi
+			else							# just log the filename via get_filename()
+				if [ "$OS_TYPE" = "Linux" ] ; then
+					echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'`
+					echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'` >> $SAVEFILE
+				elif [ "$OS_TYPE" = "FreeBSD" ] ; then
+					echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'`
+					echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'` >> $SAVEFILE
+				fi
 			fi
 			FILES=$((FILES+1))				# gather statistics
-		else 
-			if [ $f_flag -eq 0 ]; then
+		else 								# unreadable file
+			if [ $f_flag -eq 0 ]; then		# log entire path to file
 				echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
 				${CHECKSUM}: not readable
 				echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
 				${CHECKSUM}: not readable >> $SAVEFILE
-			else
+			else							# only log the filename via get_filename()
 				echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
 				${CHECKSUM}: not readable
 				echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
 				${CHECKSUM}: not readable >> $SAVEFILE
 			fi
 			UNREADABLE_FILES=$((UNREADABLE_FILES+1))	# gather statistics
-		fi
+		fi									# unreadable file
 	elif [ -p $_file ]; then
 		if [ $f_flag -eq 0 ]; then
 			echo $_file - pipe
@@ -189,6 +212,32 @@ get_filename()
 	echo $_filename
 }
 
+check_savefile_existence()
+{
+	local choice
+
+	if [ -e $1 ] ; then
+		# Confirm
+		echo -n "The savefile: $1 already exists. Do you want to overwrite it Yes/No? "
+		read -t 30 choice		# We got 30 seconds to make a choice
+
+		case $choice in
+
+		[Yy][Ee][Ss] | [Yy] )
+			rm -v $1
+			;;
+		[Nn][Oo] | [Nn] )
+			echo 'Aborted!'
+			exit 1
+			;;
+		*)
+			echo "No input received. Terminating."
+			exit 1
+			;;
+		esac
+	fi
+}
+
 usage()
 {
 	echo usage: mapdir [-dfh] [-s savefile] [file]||[directory]
@@ -223,16 +272,27 @@ done
 shift $((OPTIND-1))
 
 if [ $d_flag -eq 0 ]; then
-	shopt -s dotglob
+	shopt -s dotglob nullglob
+else
+	shopt -s nullglob
 fi
 
-# Change CHECKSUM to sha256sum
-if [ $h_flag -eq 1 ]; then
-	CHECKSUM=sha256sum
+if [ "${OS_TYPE}" = "Linux" ] ; then
+	if [ $h_flag -eq 1 ]; then				# Change CHECKSUM to sha256sum
+		CHECKSUM=sha256sum
+	else
+		CHECKSUM=md5sum
+	fi
+elif [ "${OS_TYPE}" = "FreeBSD" ] ; then
+	if [ $h_flag -eq 1 ]; then				# Change CHECKSUM to sha256
+		CHECKSUM=sha256
+	else
+		CHECKSUM=md5
+	fi
 fi
 
 #
-# if an argument is given, take it. otherwise process the current directory
+# If an argument is given, take it, otherwise process the current directory.
 #
 
 if [ $# -eq 1 ]; then
@@ -243,18 +303,22 @@ if [ $# -eq 1 ]; then
 	READLINK=$(readlink -f $1)
 	if [ $s_flag -eq 0 ]; then
 		SAVEFILE=~/mapdir$(readlink -f $1 | sed s#/#_#g)_$DATE.txt
+		check_savefile_existence $SAVEFILE
 		: > $SAVEFILE
 	else
-		SAVEFILE=~/${s_file}	
+		SAVEFILE=~/${s_file}
+		check_savefile_existence $SAVEFILE
 		: > $SAVEFILE
 	fi
 else
 	READLINK=$(readlink -f ./)
 	if [ $s_flag -eq 0 ]; then
 		SAVEFILE=~/mapdir$(pwd | sed s#/#_#g)_$DATE.txt
+		check_savefile_existence $SAVEFILE
 		:> $SAVEFILE
 	else
-		SAVEFILE=~/${s_file}	
+		SAVEFILE=~/${s_file}
+		check_savefile_existence $SAVEFILE
 		: > $SAVEFILE
 	fi
 fi
@@ -264,15 +328,17 @@ if [ $f_flag -eq 0 ]; then
 	echo Mapping structure of: $READLINK >> $SAVEFILE
 fi
 
-# When calling the readline function for the first time, we pass a second argument of "1" to it. This serves the purpose of 
-# pleasing the diff utility when invoking mapdir with the -f switch and having a directory as the first argument. If we would
-# map the starting directory to the $SAVEFILE and would later on compare it with another the $SAVEFILE, the diff utility would
-# obviously exit with a return value other than 0, even though the contents of the directories may be truly equivalent.
-# Consider for example the folders /media/filesystem_a and /media/filesystem_b that have the same content.
+# When calling the readline function for the first time, we pass a second argument of "1" to it.
+# This serves the purpose of pleasing the diff utility when invoking mapdir with the -f switch
+# and having a directory as the first argument. If we would map the starting directory to the
+# $SAVEFILE and would later on compare it with another the $SAVEFILE, the diff utility would
+# obviously exit with a return value other than 0, even though the contents of the directories
+# may be truly equivalent. Consider for example the folders:
+# /media/filesystem_a and /media/filesystem_b that both have the same content.
 #
-# The logic is as follows: if the file is a folder, then the readlink function detects this in the "is directory" part and
-# skips mapping its occurence to the $SAVEFILE. For subsequent calls to readlink we will pass a second argument of "0" to the 
-# function, which this time maps it.
+# The logic is as follows: if the file is a folder, then the readlink function detects this in
+# the "is directory" part and skips mapping its occurence to the $SAVEFILE. For subsequent calls
+# to readlink we will pass a second argument of "0" to the function, which this time maps it.
 #
 # Start processing the file/folder...
 
