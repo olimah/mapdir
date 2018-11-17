@@ -1,0 +1,6 @@
+Change log:
+
+Version 1.1:
+- Added a function that checks for the savefile's existence before overwriting
+- Added out of the box support for FreeBSD, except for bash which needs to be installed via ports
+- Fixed a bug when reading the contents of empty directories
