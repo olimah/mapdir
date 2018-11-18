@@ -4,7 +4,7 @@
 .SH NAME
 mapdir \- Map directory structures
 .SH SYNOPSIS
-.BR "mapdir " "[-dfh] [-s savefile] [/path/to/file]"
+.BR "mapdir " "[-dfhn] [-s savefile] [/path/to/file]"
 .SH DESCRIPTION
 mapdir is a shell script utility that maps the structure of files and most notably folder hierarchies. The results are stored in a report file in the invoking user's home directory, according to the following naming convention: mapdir_path_to_file_date.txt. If the file is a regular file, then mapdir also reports its size in bytes and the file's md5 checksum.
 
@@ -20,6 +20,9 @@ omit reporting the name of the starting directory in the report file
 .TP
 .B -h
 use the sha256sum message digest instead of md5sum
+.TP
+.B -n
+don't generate a savefile, i.e. only print to stdout. This option overrides the -s option
 .TP
 .B -s savefile
 save the report in savefile
