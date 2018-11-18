@@ -159,42 +159,32 @@ readfile()
 	elif [ -f $_file ]; then
 		if [ -r $_file ]; then				# it's a readable file
 			if [ $f_flag -eq 0 ]; then		# log the entire path to the file
-				get_file_stats $_file readable
-#				pretty_output $DEPTH $_file 0
+				if [ $p_flag -eq 0 ]; then
+					get_file_stats $_file readable fullpath
+				else			
+					pretty_output $DEPTH $_file 0
+				fi
 			else							# just log the filename via get_filename()
-				get_file_stats $(get_filename $_file) readable
-#				pretty_output $DEPTH $_file 0
-
-
-
-#if [ "$OS_TYPE" = "Linux" ] ; then
-#echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-#${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'`
-#if [ $n_flag -eq 0 ]; then
-#echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-#${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'` >> $SAVEFILE
-#fi
-#elif [ "$OS_TYPE" = "FreeBSD" ] ; then
-#echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-#${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'`
-#if [ $n_flag -eq 0 ]; then
-#echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-#${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'` >> $SAVEFILE
-#fi
-#fi
+				if [ $p_flag -eq 0 ]; then
+					get_file_stats $_file readable filename_only
+				else
+					pretty_output $DEPTH $_file 0
+				fi
 			fi
 			FILES=$((FILES+1))				# gather statistics
 		else 								# unreadable file
 			if [ $f_flag -eq 0 ]; then		# log entire path to file
-				get_file_stats $_file unreadable
+				if [ $p_flag -eq 0 ]; then
+					get_file_stats $_file unreadable fullpath
+				else			
+					pretty_output $DEPTH $_file 0
+				fi
 			else							# only log the filename via get_filename()
-				get_file_stats $(get_filename $_file) unreadable
-#echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-#${CHECKSUM}: not readable
-#if [ $n_flag -eq 0 ]; then
-#echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-#${CHECKSUM}: not readable >> $SAVEFILE
-#fi
+				if [ $p_flag -eq 0 ]; then
+					get_file_stats $_file unreadable filename_only
+				else			
+					pretty_output $DEPTH $_file 0
+				fi
 			fi
 			UNREADABLE_FILES=$((UNREADABLE_FILES+1))	# gather statistics
 		fi									# unreadable file
@@ -246,7 +236,10 @@ get_file_stats()
 
 	_file=$1
 
-	if [ "$2" = "readable" ] ; then
+#	echo file is: `ls -l $_file`
+#	return
+
+	if [ "$2" = "readable" ] && [ "$3" = "fullpath" ]; then
 		if [ "$OS_TYPE" = "Linux" ] ; then
 			echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
 			${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'`
@@ -262,11 +255,34 @@ get_file_stats()
 					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'` >> $SAVEFILE
 				fi
 		fi
-	elif ["$2" = "unreadable" ] ; then
+	elif [ "$2" = "readable" ] && [ "$3" = "filename_only" ]; then
+		if [ "$OS_TYPE" = "Linux" ] ; then
+			echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+			${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'`
+			if [ $n_flag -eq 0 ]; then
+				echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+		${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'` >> $SAVEFILE
+			fi
+		elif [ "$OS_TYPE" = "FreeBSD" ] ; then
+			echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+			${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'`
+			if [ $n_flag -eq 0 ]; then
+				echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+				${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'` >> $SAVEFILE
+			fi
+		fi
+	elif ["$2" = "unreadable" ] && [ "$3" = "fullpath" ]; then
 		echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
 		${CHECKSUM}: not readable
 		if [ $n_flag -eq 0 ]; then
 			echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+			${CHECKSUM}: not readable >> $SAVEFILE
+		fi
+	elif ["$2" = "unreadable" ] && [ "$3" = "filename_only" ]; then
+		echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+		${CHECKSUM}: not readable
+		if [ $n_flag -eq 0 ]; then
+			echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
 			${CHECKSUM}: not readable >> $SAVEFILE
 		fi
 	fi
