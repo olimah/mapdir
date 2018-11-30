@@ -74,9 +74,10 @@ t_flag=0				# print statistics flag
 
 readfile() 
 {
-	local _file 
+	local _file _depth
 
 	_file=$1
+	_depth=$3
 
 	if [ -d $_file ]; then
 		if [ -r $_file ] && [ -x $_file ]; then
@@ -85,8 +86,8 @@ readfile()
 				process_new_dir	$_file
 			else
 				if [ $p_flag -eq 1 ]; then
-					pretty_output $DEPTH $_file 0
-					process_pretty $_file
+					pretty_output $_file $_depth
+					process_pretty $_file $_depth
 				elif [ $2 -eq 0 ]; then
 					log_entry $_file directory filename_only
 					process_new_dir	$_file
@@ -100,7 +101,7 @@ readfile()
 				log_entry $_file "directory is not readable" fullpath
 			else
 				if [ $p_flag -eq 1 ]; then
-					pretty_output $3 $_file 0
+					pretty_output $_file $_depth
 				elif [ $2 -eq 0 ]; then
 					log_entry $_file "directory is not readable" filename_only
 				fi
@@ -114,7 +115,7 @@ readfile()
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file "block special file" filename_only
 			else			
-				pretty_output $3 $_file 0
+				pretty_output $_file $_depth
 			fi
 		fi
 		BLOCK_SPECIALS=$((BLOCK_SPECIALS+1))			# gather statistics
@@ -125,7 +126,7 @@ readfile()
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file "character special file" filename_only
 			else			
-				pretty_output $3 $_file 0
+				pretty_output $_file $_depth
 			fi
 		fi
 		CHARACTER_SPECIALS=$((CHARACTER_SPECIALS+1))		# gather statistics
@@ -136,7 +137,7 @@ readfile()
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file "symbolic link" filename_only
 			else			
-				pretty_output $DEPTH $_file 0
+				pretty_output $_file $_depth
 			fi
 		fi
 		SYMBOLIC_LINKS=$((SYMBOLIC_LINKS+1))			# gather statistics
@@ -148,7 +149,7 @@ readfile()
 				if [ $p_flag -eq 0 ]; then
 					get_file_stats $_file readable filename_only
 				else
-					pretty_output $DEPTH $_file 0
+					pretty_output $_file $_depth
 				fi
 			fi
 			FILES=$((FILES+1))				# gather statistics
@@ -159,7 +160,7 @@ readfile()
 				if [ $p_flag -eq 0 ]; then
 					get_file_stats $_file unreadable filename_only
 				else			
-					pretty_output $DEPTH $_file 0
+					pretty_output $_file $_depth
 				fi
 			fi
 			UNREADABLE_FILES=$((UNREADABLE_FILES+1))	# gather statistics
@@ -171,7 +172,7 @@ readfile()
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file pipe filename_only
 			else
-				pretty_output $DEPTH $_file 0
+				pretty_output $_file $_depth
 			fi
 		fi
 		PIPES=$((PIPES+1))					# gather statistics
@@ -182,7 +183,7 @@ readfile()
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file socket filename_only
 			else			
-				pretty_output $DEPTH $_file 0
+				pretty_output $_file $_depth
 			fi
 		fi
 		SOCKETS=$((SOCKETS+1))					# gather statistics
@@ -193,57 +194,13 @@ readfile()
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file "unknown file type" filename_only
 			else			
-				pretty_output $DEPTH $_file 0
+				pretty_output $_file $_depth
 			fi
 		fi
 		UNKNOWN=$((UNKNOWN+1))
 	fi
 }
 
-#
-# In case we encounter a new directory, this function gets called. It checks whether or nor
-# the new directory has contents and sets a few global variabels:
-#
-# lvl_$DEPTH - the depth level
-# lvl_$DEPTH_noes - the number of directory entries for the given depth level
-# lvl_$DEPTH_nods - the number of directories only for the given depth level
-#
-
-process_pretty()
-{
-	local _dir_counter _contents _noes _depth
-
-	_dir_counter=0
-
-	_dir=$1
-	cd $_dir
-	_contents=*
-
-	_noes=($_contents)
-	_noes=${#_noes[@]}
-	
-	if [ $_noes -ne 0 ]; then
-		_depth=$(($DEPTH+1))
-
-		for _entry in $_contents ; do
-			readfile $_entry 0 $_depth
-		done
-#		pretty_output $_depth $_
-
-#		declare -g "lvl_$DEPTH_noes"=$_noes
-#		declare -g "lvl_$DEPTH"=$DEPTH
-
-#		for _entry in $_contents ; do
-#			if [ -d `readlink -f $_entry` ] ; then
-#				_dir_counter=$((_dir_counter+1))
-#			fi
-#		done
-	
-#		if [ $_dir_counter -ne 0 ] ; then
-#			declare -g "lvl_$DEPTH_nods"=$_dir_counter
-#		fi
-	fi
-}
 
 #
 # Check if the directory has contents, get the number of directory entries and call
@@ -260,7 +217,7 @@ process_new_dir()
 	_contents=*
 	if [[ ! -z $_contents ]] ; then	# directory has contents
 		for _entry in $_contents ; do
-			_newpath=$_dir/"$_entry"
+			_newpath="$_dir/$_entry"
 			readfile $_newpath 0 $DEPTH
 		done
 	fi
@@ -350,6 +307,33 @@ get_file_stats()
 }
 
 #
+# In case we encounter a new directory, this function gets called. It checks whether or nor
+# the new directory has contents and calls readline again.
+#
+
+process_pretty()
+{
+	local _dir _depth _contents _entry _newpath _noes
+
+	_dir=$1
+	_depth=$2
+	cd $_dir
+	_contents=*
+
+	_noes=($_contents)
+	_noes=${#_noes[@]}
+	
+	if [ $_noes -ne 0 ]; then
+		_depth=$(($_depth+1))
+
+		for _entry in $_contents ; do
+			_newpath="$_dir/$_entry"
+			readfile $_newpath 0 $_depth
+		done
+	fi
+}
+
+#
 # Print the structure of the argument passed to mapdir to stdout as a pretty output tree.
 # Invoked with the -p switch. Needs -f to work.
 #
@@ -364,45 +348,32 @@ pretty_output()		# lsblk(1) like pretty output...
 # space=" " <==> space="${space} "	# level 5 seqs: 1, 1, 5 =>  9 spaces, end: 10
 # space=" " <==> space="${space} "	# level 6 seqs: 1, 1, 6 => 11 spaces, end: 12
 #...
-	local _level _entry _lastentry
+	local _level _entry _space
 	# http://jrgraphix.net/r/Unicode/2500-257F
 
-	box_rh=$(echo -e "\u2514")		# └
-	box_hl=$(echo -e "\u2500")		# ─
-	box_vl=$(echo -e "\u2502")		# │
-	box_mh=$(echo -e "\u251C")		# ├
-	box_pl=$(echo -e "\u253C")		# ┼
-	declare -r seq_start_val=1
-	declare -r seq_step_val=1
-	seq_end_val=$1
-	_level=$1
-	_entry=$(get_filename $2)
-	_lastentry=$3
-	space=" "
+	_box_rh=$(echo -e "\u2514")		# └
+	_box_hl=$(echo -e "\u2500")		# ─
+	_box_vl=$(echo -e "\u2502")		# │
+	_box_mh=$(echo -e "\u251C")		# ├
+	_box_pl=$(echo -e "\u253C")		# ┼
+	declare -r _seq_start_val=1
+	declare -r _seq_step_val=1
+	_entry=$(get_filename $1)
+	_seq_end_val=$2
+	_space=" "
 
-	if [ $_level -eq 0 ] ; then
-		echo "$box_mh$box_hl$_entry"
-		echo "$_entry"
-	elif [ $_level -eq 1 ] ; then
-		echo "$box_mh$box_hl$box_hl$_entry"
-	elif [ $_level -eq 2 ] ; then
-		echo "$box_mh$space$space$box_mh$_entry"
-#	elif [ $_level -eq 1 ] ; then
-#		if [ $_lastentry -eq 1 ] ; then
-#			echo " ${space}|-$_entry"
-#		else
-#			echo "|${space}|-$_entry"
-#		fi
-#	elif [ $_level -gt 1 ] ; then
-#		for i in $(seq $seq_start_val $seq_step_val $seq_end_val)
-#		do
-#			space="${space} "
-#		done
-#		if [ $_lastentry -eq 1 ] ; then
-#			echo " ${space}|-$_entry"
-#		else
-#			echo "|${space}|-$_entry"
-#		fi
+	if [ $_seq_end_val -ne 1 ]; then
+		_space="  "
+		for i in $(seq $_seq_start_val $_seq_step_val $(($_seq_end_val-1)))
+		do
+			_space="${_space} "
+		done
+	fi
+
+	if [ $_seq_end_val -eq 0 ]; then
+		echo "$_box_hl$_box_hl$_entry"
+	else
+		echo " $_space$_box_hl$_entry"
 	fi
 }
 
