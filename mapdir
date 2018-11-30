@@ -31,7 +31,7 @@
 # log_entry()
 # get_file_stats()
 # get_filename()
-# get_number_of_dirs()
+# process_pretty()
 # pretty_output()
 # check_savefile_existence()
 # usage()
@@ -41,7 +41,7 @@ READLINK=
 CHECKSUM=
 DATE=$(date +%m%d%Y)		# today
 OS_TYPE=$(uname)
-DEPTH=1
+DEPTH=0
 SAVEFILE=
 STRLEN=						# for nice output at the end
 # variables that are used for the statistics at the end of the program
@@ -66,6 +66,7 @@ n_flag=0				# no savefile flag
 p_flag=0				# display output as directory tree
 s_flag=0
 s_file=					# alternate savefile
+t_flag=0				# print statistics flag
 
 #
 # This is the main function.
@@ -81,18 +82,24 @@ readfile()
 		if [ -r $_file ] && [ -x $_file ]; then
 			if [ $f_flag -eq 0 ]; then
 				log_entry $_file directory fullpath
+				process_new_dir	$_file
 			else
-				if [ $2 -eq 0 ]; then
+				if [ $p_flag -eq 1 ]; then
+					pretty_output $DEPTH $_file 0
+					process_pretty $_file
+				elif [ $2 -eq 0 ]; then
 					log_entry $_file directory filename_only
+					process_new_dir	$_file
 				fi
 			fi
 			DIRS=$((DIRS+1))							# gather statistics
-			process_new_dir	$_file						# and process the new directory
 		else 
 			if [ $f_flag -eq 0 ]; then
 				log_entry $_file "directory is not readable" fullpath
 			else
-				if [ $2 -eq 0 ]; then
+				if [ $p_flag -eq 1 ]; then
+					pretty_output $DEPTH $_file 0
+				elif [ $2 -eq 0 ]; then
 					log_entry $_file "directory is not readable" filename_only
 				fi
 			fi
@@ -188,6 +195,51 @@ readfile()
 			fi
 		fi
 		UNKNOWN=$((UNKNOWN+1))
+	fi
+}
+
+#
+# In case we encounter a new directory, this function gets called. It checks whether or nor
+# the new directory has contents and sets a few global variabels:
+#
+# lvl_$DEPTH - the depth level
+# lvl_$DEPTH_noes - the number of directory entries for the given depth level
+# lvl_$DEPTH_nods - the number of directories only for the given depth level
+#
+
+process_pretty()
+{
+	local _dir_counter _contents _noes _depth
+
+	_dir_counter=0
+
+	_dir=$1
+	cd $_dir
+	_contents=*
+
+	_noes=($_contents)
+	_noes=${#_noes[@]}
+	
+	if [ $_noes -ne 0 ]; then
+		_depth=$(($DEPTH+1))
+
+		for _entry in $_contents ; do
+			readfile $_entry 0 $_depth
+		done
+#		pretty_output $_depth $_
+
+#		declare -g "lvl_$DEPTH_noes"=$_noes
+#		declare -g "lvl_$DEPTH"=$DEPTH
+
+#		for _entry in $_contents ; do
+#			if [ -d `readlink -f $_entry` ] ; then
+#				_dir_counter=$((_dir_counter+1))
+#			fi
+#		done
+	
+#		if [ $_dir_counter -ne 0 ] ; then
+#			declare -g "lvl_$DEPTH_nods"=$_dir_counter
+#		fi
 	fi
 }
 
@@ -300,7 +352,7 @@ get_file_stats()
 # Invoked with the -p switch. Needs -f to work.
 #
 
-pretty_output()
+pretty_output()		# lsblk(1) like pretty output...
 {
 # space=""  <==> space="${space}"	# level 0 seqs: 1, 1, 0 =>  0 spaces, end:  0
 # space=" " <==> space="${space} "	# level 1 seqs: 1, 1, 1 =>  1 space,  end:  2
@@ -326,8 +378,13 @@ pretty_output()
 	_lastentry=$3
 	space=" "
 
-	if [ $_level -eq 1 ] ; then
+	if [ $_level -eq 0 ] ; then
+#		echo "$box_mh$box_hl$_entry"
+		echo "$_entry"
+	elif [ $_level -eq 1 ] ; then
 		echo "$box_mh$box_hl$box_hl$_entry"
+	elif [ $_level -eq 2 ] ; then
+		echo "$box_mh$space$space$box_mh$_entry"
 #	elif [ $_level -eq 1 ] ; then
 #		if [ $_lastentry -eq 1 ] ; then
 #			echo " ${space}|-$_entry"
@@ -392,13 +449,13 @@ check_savefile_existence()
 
 usage()
 {
-	echo usage: mapdir [-dfhnp] [-s savefile] [file]||[directory]
+	echo usage: mapdir [-dfhnpt] [-s savefile] [file]||[directory]
 	exit 1
 }
 
 ### Point of entry ###
 
-while getopts ":dfhnps:" opt ; do
+while getopts ":dfhnps:t" opt ; do
 	case $opt in
 		d)
 			d_flag=1
@@ -418,6 +475,9 @@ while getopts ":dfhnps:" opt ; do
 		s)
 			s_flag=1
 			s_file=$OPTARG
+			;;
+		t)
+			t_flag=1
 			;;
 		\?)
 			echo "unkown flag: -$OPTARG."
@@ -492,7 +552,7 @@ else
 fi
 
 #echo Mapping structure of: $READLINK
-#echo $READLINK
+# echo $READLINK
 #if [ $n_flag -eq 0 ]; then
 #	if [ $f_flag -eq 0 ]; then
 #		echo Mapping structure of: $READLINK >> $SAVEFILE
@@ -510,211 +570,116 @@ fi
 # The logic is as follows: if the file is a folder, then the readlink function detects this in
 # the "is directory" part and skips mapping its occurence to the $SAVEFILE. For subsequent calls
 # to readlink we will pass a second argument of "0" to the function, which this time maps it.
-#
+
 # Start processing the file/folder...
 
 readfile $READLINK 1 $DEPTH
 
 #
-# At this point, we are done parsing.
+# At this point, we are done parsing. Now print statistics if desired.
 #
 
-echo
-if [ $n_flag -eq 0 ]; then
-	echo >> $SAVEFILE
-fi
+if [ $t_flag -eq 1 ] && [ $p_flag -ne 1 ]; then
+	echo
+	if [ $n_flag -eq 0 ]; then
+		echo >> $SAVEFILE
+	fi
 
-STRLEN="########## Statistics for $READLINK ##########"
-echo $STRLEN
-if [ $n_flag -eq 0 ]; then
-	if [ $f_flag -eq 0 ]; then
-		echo $STRLEN >> $SAVEFILE
-	else
-		echo "########## Statistics ##########" >> $SAVEFILE
-	fi
-fi
-
-if [ $DIRS -ne 0 ]; then 
-	echo Number of directories: $DIRS
-	if [ $n_flag -eq 0 ]; then
-		echo Number of directories: $DIRS >> $SAVEFILE
-	fi
-fi
-if [ $UNREADABLE_DIRS -ne 0 ]; then 
-	echo Number of unreadable directories: $UNREADABLE_DIRS
-	if [ $n_flag -eq 0 ]; then
-		echo Number of unreadable directories: $UNREADABLE_DIRS >> $SAVEFILE
-	fi
-fi
-if [ $FILES -ne 0 ]; then
-	echo Number of regular files: $FILES
-	if [ $n_flag -eq 0 ]; then
-		echo Number of regular files: $FILES >> $SAVEFILE
-	fi
-fi
-if [ $UNREADABLE_FILES -ne 0 ]; then
-	echo Number of unreadble files: $UNREADABLE_FILES
-	if [ $n_flag -eq 0 ]; then
-		echo Number of unreadble files: $UNREADABLE_FILES >> $SAVEFILE
-	fi
-fi
-if [ $BLOCK_SPECIALS -ne 0 ]; then
-	echo Number of block special files: $BLOCK_SPECIALS
-	if [ $n_flag -eq 0 ]; then
-		echo Number of block special files: $BLOCK_SPECIALS >> $SAVEFILE
-	fi
-fi
-if [ $CHARACTER_SPECIALS -ne 0 ]; then
-	echo Number of character speial files: $CHARACTER_SPECIAL
-	if [ $n_flag -eq 0 ]; then
-		echo Number of character speial files: $CHARACTER_SPECIAL >> $SAVEFILE
-	fi
-fi
-if [ $PIPES -ne 0 ]; then
-	echo Number of pipes: $PIPE
-	if [ $n_flag -eq 0 ]; then
-		echo Number of pipes: $PIPE >> $SAVEFILE
-	fi
-fi
-if [ $SOCKETS -ne 0 ]; then 
-	echo Number of sockets: $SOCKET
-	if [ $n_flag -eq 0 ]; then
-		echo Number of sockets: $SOCKET >> $SAVEFILE
-	fi
-fi
-if [ $SYMBOLIC_LINKS -ne 0 ]; then
-	echo Number of symbolic links: $SYMBOLIC_LINKS
-	if [ $n_flag -eq 0 ]; then
-		echo Number of symbolic links: $SYMBOLIC_LINKS >> $SAVEFILE
-	fi
-fi
-if [ $UNKNOWN -ne 0 ]; then
-	echo Number of symbolic links: $UNKNOWN
-	if [ $n_flag -eq 0 ]; then
-		echo Number of symbolic links: $UNKNOWN >> $SAVEFILE
-	fi
-fi
-
-#
-# pretty output
-#
-STRLEN=${#STRLEN}
-while [ $STRLEN -gt 0 ]
-do
-	echo -n "#"
+	STRLEN="########## Statistics for $READLINK ##########"
+	echo $STRLEN
 	if [ $n_flag -eq 0 ]; then
 		if [ $f_flag -eq 0 ]; then
-			echo -n "#" >> $SAVEFILE
-		fi
-	fi
-	STRLEN=$((STRLEN-1))
-done
-IFS=$SAVEIFS			# reset the old IFS
-echo
-if [ $n_flag -eq 0 ]; then
-	if [ $f_flag -eq 0 ]; then
-		echo >> $SAVEFILE
-	else
-		echo "################################" >> $SAVEFILE
-	fi
-fi
-echo Done!
-if [ $n_flag -eq 0 ]; then
-	echo Done! >> $SAVEFILE
-fi
-exit 0
-#!/bin/sh
-
-#noe=($CONTENTS)
-#echo ${#noe[@]}
-#noe=$((${#noe[@]}+0))
-#echo noe is: $noe
-#noe=$((${noe}-1))
-
-#	if [ $noe -ne 0 ] ; then
-#		echo -n "|"
-#	fi
-
-DEPTH=3
-
-# lsblk(1) like pretty output
-pretty_output()
-{
-# space=""  <==> space="${space}"	# level 0 seqs: 1, 1, 0 =>  0 spaces, end:  0
-# space=" " <==> space="${space} "	# level 1 seqs: 1, 1, 1 =>  1 space,  end:  2
-# space=" " <==> space="${space} "	# level 2 seqs: 1, 1, 2 =>  3 spaces, end:  4
-# space=" " <==> space="${space} "	# level 3 seqs: 1, 1, 3 =>  5 spaces, end:  6
-# space=" " <==> space="${space} "	# level 4 seqs: 1, 1, 4 =>  7 spaces, end:  8
-# space=" " <==> space="${space} "	# level 5 seqs: 1, 1, 5 =>  9 spaces, end: 10
-# space=" " <==> space="${space} "	# level 6 seqs: 1, 1, 6 => 11 spaces, end: 12
-#...
-	local _level _entry _lastentry
-	declare -r seq_start_val=1
-	declare -r seq_step_val=1
-	seq_end_val=$1
-	_level=$1
-	_entry=$2
-	_lastentry=$3
-
-	space=" "				
-	if [ $_level -eq 0 ] ; then
-		echo "|-$_entry"
-	elif [ $_level -eq 1 ] ; then
-		if [ $_lastentry -eq 1 ] ; then
-			echo " ${space}|-$_entry"
+			echo $STRLEN >> $SAVEFILE
 		else
-			echo "|${space}|-$_entry"
-		fi
-	elif [ $_level -gt 1 ] ; then
-		for i in $(seq $seq_start_val $seq_step_val $seq_end_val)
-		do
-			space="${space} "
-		done
-		if [ $_lastentry -eq 1 ] ; then
-			echo " ${space}|-$_entry"
-		else
-			echo "|${space}|-$_entry"
+			echo "########## Statistics ##########" >> $SAVEFILE
 		fi
 	fi
-}
 
-get_number_of_dirs()
-{
-	dir_counter=0
-	a_var=2
+	if [ $DIRS -ne 0 ]; then 
+		echo Number of directories: $DIRS
+		if [ $n_flag -eq 0 ]; then
+			echo Number of directories: $DIRS >> $SAVEFILE
+		fi
+	fi
+	if [ $UNREADABLE_DIRS -ne 0 ]; then 
+		echo Number of unreadable directories: $UNREADABLE_DIRS
+		if [ $n_flag -eq 0 ]; then
+			echo Number of unreadable directories: $UNREADABLE_DIRS >> $SAVEFILE
+		fi
+	fi
+	if [ $FILES -ne 0 ]; then
+		echo Number of regular files: $FILES
+		if [ $n_flag -eq 0 ]; then
+			echo Number of regular files: $FILES >> $SAVEFILE
+		fi
+	fi
+	if [ $UNREADABLE_FILES -ne 0 ]; then
+		echo Number of unreadble files: $UNREADABLE_FILES
+		if [ $n_flag -eq 0 ]; then
+			echo Number of unreadble files: $UNREADABLE_FILES >> $SAVEFILE
+		fi
+	fi
+	if [ $BLOCK_SPECIALS -ne 0 ]; then
+		echo Number of block special files: $BLOCK_SPECIALS
+		if [ $n_flag -eq 0 ]; then
+			echo Number of block special files: $BLOCK_SPECIALS >> $SAVEFILE
+		fi
+	fi
+	if [ $CHARACTER_SPECIALS -ne 0 ]; then
+		echo Number of character speial files: $CHARACTER_SPECIAL
+		if [ $n_flag -eq 0 ]; then
+			echo Number of character speial files: $CHARACTER_SPECIAL >> $SAVEFILE
+		fi
+	fi
+	if [ $PIPES -ne 0 ]; then
+		echo Number of pipes: $PIPE
+		if [ $n_flag -eq 0 ]; then
+			echo Number of pipes: $PIPE >> $SAVEFILE
+		fi
+	fi
+	if [ $SOCKETS -ne 0 ]; then 
+		echo Number of sockets: $SOCKET
+		if [ $n_flag -eq 0 ]; then
+			echo Number of sockets: $SOCKET >> $SAVEFILE
+		fi
+	fi
+	if [ $SYMBOLIC_LINKS -ne 0 ]; then
+		echo Number of symbolic links: $SYMBOLIC_LINKS
+		if [ $n_flag -eq 0 ]; then
+			echo Number of symbolic links: $SYMBOLIC_LINKS >> $SAVEFILE
+		fi
+	fi
+	if [ $UNKNOWN -ne 0 ]; then
+		echo Number of symbolic links: $UNKNOWN
+		if [ $n_flag -eq 0 ]; then
+			echo Number of symbolic links: $UNKNOWN >> $SAVEFILE
+		fi
+	fi
 
-	if [ -d $1 ] ; then
-		_dir=$1
-		DEPTH=$(($DEPTH+1))
-		cd $_dir
-		_contents=*
-		for _entry in $_contents ; do
-			if [ -d `readlink -f $_entry` ] ; then
-				dir_counter=$((dir_counter+1))
+	# formatted output
+	STRLEN=${#STRLEN}
+	while [ $STRLEN -gt 0 ]
+	do
+		echo -n "#"
+		if [ $n_flag -eq 0 ]; then
+			if [ $f_flag -eq 0 ]; then
+				echo -n "#" >> $SAVEFILE
 			fi
-		done
-	fi
-
-	echo $DEPTH depth
-
-	for _entry in $_contents ; do
-		pretty_output $DEPTH $_entry 0
+		fi
+		STRLEN=$((STRLEN-1))
 	done
-
-#	if [ $dir_counter -ne 0 ] ; then
-#		declare "my_new_var_$a_var"=$dir_counter
-#		mnv=my_new_var_$a_var
-#		mnv=$dir_counter
+	IFS=$SAVEIFS			# reset the old IFS
+	echo
+	if [ $n_flag -eq 0 ]; then
+		if [ $f_flag -eq 0 ]; then
+			echo >> $SAVEFILE
+		else
+			echo "################################" >> $SAVEFILE
+		fi
+	fi
+#	echo Done!
+#	if [ $n_flag -eq 0 ]; then
+#		echo Done! >> $SAVEFILE
 #	fi
-
-#	echo "$mnv"
-}
-
-### entry point
-SAVEIFS=$IFS                    # save the current Internal Field Seperator
-IFS=$(echo -en "\n\b")          # and set a new one
-
-get_number_of_dirs $1
-
-IFS=$SAVEIFS					# reset the old IFS
-exit
+fi # t_flag
+exit 0
