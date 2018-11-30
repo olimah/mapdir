@@ -90,6 +90,8 @@ readfile()
 				elif [ $2 -eq 0 ]; then
 					log_entry $_file directory filename_only
 					process_new_dir	$_file
+				elif [ $2 -eq 1 ]; then
+					process_new_dir	$_file
 				fi
 			fi
 			DIRS=$((DIRS+1))							# gather statistics
@@ -98,7 +100,7 @@ readfile()
 				log_entry $_file "directory is not readable" fullpath
 			else
 				if [ $p_flag -eq 1 ]; then
-					pretty_output $DEPTH $_file 0
+					pretty_output $3 $_file 0
 				elif [ $2 -eq 0 ]; then
 					log_entry $_file "directory is not readable" filename_only
 				fi
@@ -112,7 +114,7 @@ readfile()
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file "block special file" filename_only
 			else			
-				pretty_output $DEPTH $_file 0
+				pretty_output $3 $_file 0
 			fi
 		fi
 		BLOCK_SPECIALS=$((BLOCK_SPECIALS+1))			# gather statistics
@@ -123,7 +125,7 @@ readfile()
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file "character special file" filename_only
 			else			
-				pretty_output $DEPTH $_file 0
+				pretty_output $3 $_file 0
 			fi
 		fi
 		CHARACTER_SPECIALS=$((CHARACTER_SPECIALS+1))		# gather statistics
@@ -379,7 +381,7 @@ pretty_output()		# lsblk(1) like pretty output...
 	space=" "
 
 	if [ $_level -eq 0 ] ; then
-#		echo "$box_mh$box_hl$_entry"
+		echo "$box_mh$box_hl$_entry"
 		echo "$_entry"
 	elif [ $_level -eq 1 ] ; then
 		echo "$box_mh$box_hl$box_hl$_entry"
