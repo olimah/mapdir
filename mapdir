@@ -371,9 +371,9 @@ pretty_output()
 		echo "$_box_hl$_box_hl$_entry"
 	else
 		if [ "$_symboltype" = "middleentry" ]; then
-			echo "$_space$_box_vl$_box_mh$_entry"
+			echo " $_space$_box_mh$_entry"
 		elif [ "$_symboltype" = "lastentry" ]; then
-			echo  "$_space$_box_rh$_entry"
+			echo " $_space$_box_rh$_entry"
 		fi
 	fi
 }
