@@ -55,6 +55,7 @@ PIPES=0
 SOCKETS=0
 SYMBOLIC_LINKS=0
 UNKNOWN=0
+TOTAL_FILES=0
 SAVEIFS=$IFS			# save the current Internal Field Seperator
 IFS=$(echo -en "\n\b")		# and set a new one
 export LC_COLLATE=C
@@ -74,21 +75,25 @@ t_flag=0				# print statistics flag
 
 readfile()
 {
-	local _file _fpleaser _depth _pretty_symbol
+	local _file _fpleaser _depth _psymbol _pnoes _pbinstring
 
 	_file=$1
 #_fpleaser=$2
 	_depth=$3
-	_pretty_symbol=$4
+	_psymbol=$4
+	_pnoes=$5
+	_pbinstring=$6
 
 	if [ -d $_file ]; then
 		if [ -r $_file ] && [ -x $_file ]; then
+			DIRS=$((DIRS+1))
+			TOTAL_FILES=$((TOTAL_FILES+1))
 			if [ $f_flag -eq 0 ]; then
 				log_entry $_file directory fullpath
 				process_new_dir	$_file
 			else
 				if [ $p_flag -eq 1 ]; then
-					pretty_output $_file $_depth $_pretty_symbol
+					pretty_output $_file $_depth $_psymbol $_pnoes $_pbinstring
 					process_new_dir $_file $_depth
 				elif [ $2 -eq 0 ]; then
 					log_entry $_file directory filename_only
@@ -97,109 +102,117 @@ readfile()
 					process_new_dir	$_file
 				fi
 			fi
-			DIRS=$((DIRS+1))							# gather statistics
 		else 
+			UNREADABLE_DIRS=$((UNREADABLE_DIRS+1))
+			TOTAL_FILES=$((TOTAL_FILES+1))
 			if [ $f_flag -eq 0 ]; then
 				log_entry $_file "directory is not readable" fullpath
 			else
 				if [ $p_flag -eq 1 ]; then
-					pretty_output $_file $_depth $_pretty_symbol
+					pretty_output $_file $_depth $_psymbol $_pnoes $_pbinstring
 				elif [ $2 -eq 0 ]; then
 					log_entry $_file "directory is not readable" filename_only
 				fi
 			fi
-			UNREADABLE_DIRS=$((UNREADABLE_DIRS+1))		# gather statistics
 		fi
 	elif [ -b $_file ]; then
+		BLOCK_SPECIALS=$((BLOCK_SPECIALS+1))
+		TOTAL_FILES=$((TOTAL_FILES+1))
 		if [ $f_flag -eq 0 ]; then
 			log_entry $_file "block special file" fullpath
 		else
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file "block special file" filename_only
 			else			
-				pretty_output $_file $_depth $_pretty_symbol
+				pretty_output $_file $_depth $_psymbol $_pnoes $_pbinstring
 			fi
 		fi
-		BLOCK_SPECIALS=$((BLOCK_SPECIALS+1))			# gather statistics
 	elif [ -c $_file ]; then
+		CHARACTER_SPECIALS=$((CHARACTER_SPECIALS+1))
+		TOTAL_FILES=$((TOTAL_FILES+1))
 		if [ $f_flag -eq 0 ]; then
 			log_entry $_file "character special file" fullpath
 		else
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file "character special file" filename_only
 			else			
-				pretty_output $_file $_depth $_pretty_symbol
+				pretty_output $_file $_depth $_psymbol $_pnoes $_pbinstring
 			fi
 		fi
-		CHARACTER_SPECIALS=$((CHARACTER_SPECIALS+1))		# gather statistics
 	elif [ -L $_file ]; then
+		SYMBOLIC_LINKS=$((SYMBOLIC_LINKS+1))
+		TOTAL_FILES=$((TOTAL_FILES+1))
 		if [ $f_flag -eq 0 ]; then
 			log_entry $_file "symbolic link" fullpath
 		else
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file "symbolic link" filename_only
 			else			
-				pretty_output $_file $_depth $_pretty_symbol
+				pretty_output $_file $_depth $_psymbol $_pnoes $_pbinstring
 			fi
 		fi
-		SYMBOLIC_LINKS=$((SYMBOLIC_LINKS+1))			# gather statistics
 	elif [ -f $_file ]; then
 		if [ -r $_file ]; then				# it's a readable file
+			FILES=$((FILES+1))
+			TOTAL_FILES=$((TOTAL_FILES+1))
 			if [ $f_flag -eq 0 ]; then		# log the entire path to the file
 				get_file_stats $_file readable fullpath
 			else							# just log the filename via get_file_stats
 				if [ $p_flag -eq 0 ]; then
 					get_file_stats $_file readable filename_only
 				else
-					pretty_output $_file $_depth $_pretty_symbol
+					pretty_output $_file $_depth $_psymbol $_pnoes $_pbinstring
 				fi
 			fi
-			FILES=$((FILES+1))				# gather statistics
 		else 								# unreadable file
+			UNREADABLE_FILES=$((UNREADABLE_FILES+1))
+			TOTAL_FILES=$((TOTAL_FILES+1))
 			if [ $f_flag -eq 0 ]; then		# log entire path to file
 				get_file_stats $_file unreadable fullpath
 			else							# only log the filename via get_file_stats
 				if [ $p_flag -eq 0 ]; then
 					get_file_stats $_file unreadable filename_only
 				else			
-					pretty_output $_file $_depth $_pretty_symbol
+					pretty_output $_file $_depth $_psymbol $_pnoes $_pbinstring
 				fi
 			fi
-			UNREADABLE_FILES=$((UNREADABLE_FILES+1))	# gather statistics
 		fi									# unreadable file
 	elif [ -p $_file ]; then
+		PIPES=$((PIPES+1))
+		TOTAL_FILES=$((TOTAL_FILES+1))
 		if [ $f_flag -eq 0 ]; then
 			log_entry $_file pipe fullpath
 		else
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file pipe filename_only
 			else
-				pretty_output $_file $_depth $_pretty_symbol
+				pretty_output $_file $_depth $_psymbol $_pnoes $_pbinstring
 			fi
 		fi
-		PIPES=$((PIPES+1))					# gather statistics
 	elif [ -S $_file ]; then
+		SOCKETS=$((SOCKETS+1))
+		TOTAL_FILES=$((TOTAL_FILES+1))
 		if [ $f_flag -eq 0 ]; then
 			log_entry $_file socket fullpath
 		else
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file socket filename_only
 			else			
-				pretty_output $_file $_depth $_pretty_symbol
+				pretty_output $_file $_depth $_psymbol $_pnoes $_pbinstring
 			fi
 		fi
-		SOCKETS=$((SOCKETS+1))					# gather statistics
 	else
+		UNKNOWN=$((UNKNOWN+1))
+		TOTAL_FILES=$((TOTAL_FILES+1))
 		if [ $f_flag -eq 0 ]; then
 			log_entry $_file "unknown file type" fullpath
 		else
 			if [ $p_flag -eq 0 ]; then
 				log_entry $_file "unknown file type" filename_only
 			else			
-				pretty_output $_file $_depth $_pretty_symbol
+				pretty_output $_file $_depth $_psymbol $_pnoes $_pbinstring
 			fi
 		fi
-		UNKNOWN=$((UNKNOWN+1))
 	fi
 }
 
@@ -210,13 +223,45 @@ readfile()
 
 process_new_dir()
 {
-	local _dir _depth _contents _entry _newpath _noes
+	local _dir _contents _depth _entry _newpath _noes \
+			_pcontents _pdir _pnoes _psstring
 
+	# For the pretty_output function, first examine all the parent directories to
+	# find out what type of entries we have and set flags accordingly.
+	
+	_depth=$2
+	if [ $p_flag -eq 1 ] && [ $_depth -ge 1 ]; then
+		_pdir=$1
+		while [ $_depth -ge 0 ]; do
+			cd $_pdir
+			cd ..
+			_pcontents=*
+			_pcontents=($_pcontents)
+			_pnoes=${#_pcontents[@]}
+			_pdir=$(get_filename $_pdir)
+#
+# echo parentdir last entry is: ${_pcontents[$_pnoes-1]}
+#
+			if [ "${_pcontents[$_pnoes-1]}" = "$_pdir" ]; then
+#				echo $1 is the same
+				_psstring="0$_psstring"
+			else
+				_psstring="1$_psstring"
+			fi
+
+			_pdir=$(pwd)
+			_depth=$(($_depth-1))
+		done
+#
+# echo plines: $_psstring
+#
+	fi
+
+	# Now process the directory that actually got passed to the function.
 	_dir=$1
 	_depth=$2
 	cd $_dir
 	_contents=*
-
 	_noes=($_contents)
 	_noes=${#_noes[@]}
 
@@ -226,9 +271,9 @@ process_new_dir()
 		for _entry in $_contents ; do
 			_newpath="$_dir/$_entry"
 			if [ $_noes -eq 1 ]; then
-				readfile $_newpath 0 $_depth lastentry
+				readfile $_newpath 0 $_depth lastentry $_pnoes $_psstring
 			else
-				readfile $_newpath 0 $_depth middleentry
+				readfile $_newpath 0 $_depth middleentry $_pnoes $_psstring
 			fi
 			_noes=$(($_noes-1))
 		done
@@ -343,7 +388,7 @@ get_filename()
 pretty_output()
 {
 	local _entry _space _seq_start_val _seq_step_val _seq_end_val _symboltype \
-			_box_rh _box_hl _box_vl _box_mh _box_pl
+			_binstring _pnoes _box_rh _box_hl _box_vl _box_mh _box_pl
 
 	# http://jrgraphix.net/r/Unicode/2500-257F
 	_box_rh=$(echo -e "\u2514")		# └
@@ -357,7 +402,65 @@ pretty_output()
 	_entry=$(get_filename $1)
 	_seq_end_val=$2
 	_symboltype=$3
+	_pnoes=$4
 	_space=" "
+	_binstring=$5
+
+##
+#	echo depth_level: $_seq_end_val
+##
+
+
+str=""
+################### new version below
+
+#if [ $2 -ge 2 ] && [ ! -d $1 ]; then
+	_space="  "
+	if [ ! -z $_binstring ]; then
+		for i in $(seq 0 1 $((${#_binstring}-1))) ; do
+			if [ $i -eq 0 ]; then
+				continue
+			elif [ "${_binstring:i:1}" = "0" ] ; then
+				str="$str "
+			elif [ "${_binstring:i:1}" = "1" ] ; then
+				str="$str$_box_vl"
+			fi
+		done
+	fi
+#		echo binstring is: $_binstring binlength: ${#_binstring}
+#		echo binlength: ${#_binstring} entry: $_entry
+#			if []; then
+#			echo i is $i
+#			echo substring is: ${_binstring:i:1}
+#			else
+
+#echo i$i is ${_binstring:i:1}
+
+#			if [ "${_binstring:i:1}" = "0" ]; then
+#				_space="$_space$_space1"
+#			else
+#				_space="$_space$_box_vl"
+#			fi
+#			fi
+
+#	fi
+
+#	if [ -z $_binstring ]; then
+#		echo unset binstring is: $_binstring
+#	fi
+
+	if [ $TOTAL_FILES -eq 1 ]; then
+		echo "$_box_hl$_box_hl$_entry"
+	elif [ "$_symboltype" = "middleentry" ]; then
+		echo "$_space$str$_box_mh$_entry"
+	elif [ "$_symboltype" = "lastentry" ]; then
+		echo "$_space$str$_box_rh$_entry"
+	fi
+
+return
+
+############### old version below
+
 
 	if [ $_seq_end_val -ne 1 ]; then
 		_space="  "
@@ -368,12 +471,25 @@ pretty_output()
 	fi
 
 	if [ $_seq_end_val -eq 0 ]; then
+echo b: $_binstring
 		echo "$_box_hl$_box_hl$_entry"
 	else
 		if [ "$_symboltype" = "middleentry" ]; then
-			echo " $_space$_box_mh$_entry"
+			if [[ ! -z $_pnoes ]] && [ $_pnoes -gt 0 ]; then
+echo b: $_binstring
+				echo "$_space$_box_vl$_box_mh$_entry"
+			else
+echo b: $_binstring
+				echo " $_space$_box_mh$_entry"
+			fi
 		elif [ "$_symboltype" = "lastentry" ]; then
-			echo " $_space$_box_rh$_entry"
+			if [[ ! -z $_pnoes ]] && [ $_pnoes -gt 0 ]; then
+echo b: $_binstring
+				echo "$_space$_box_vl$_box_rh$_entry"
+			else
+echo b: $_binstring
+				echo " $_space$_box_rh$_entry"
+			fi
 		fi
 	fi
 }
