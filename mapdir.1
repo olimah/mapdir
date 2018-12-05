@@ -1,14 +1,14 @@
 ." Manpage for mapdir
 .".RI [ underlined ]
-.TH mapdir 1 "October 2017" "mapdir 1.0" "Manpage for mapdir"
+.TH mapdir 1 "December 2018" "mapdir 1.2" "Manpage for mapdir"
 .SH NAME
 mapdir \- Map directory structures
 .SH SYNOPSIS
-.BR "mapdir " "[-dfhn] [-s savefile] [/path/to/file]"
+.BR "mapdir " "[-dfhnpt] [-s savefile] [/path/to/file]"
 .SH DESCRIPTION
-mapdir is a shell script utility that maps the structure of files and most notably folder hierarchies. The results are stored in a report file in the invoking user's home directory, according to the following naming convention: mapdir_path_to_file_date.txt. If the file is a regular file, then mapdir also reports its size in bytes and the file's md5 checksum.
+The mapdir utility seeks to map the structure of files and most notably folder hierarchies. Unless overridden with the -n or -s options, the results are stored in a report file in the invoking user's home directory, according to the following naming convention: mapdir_path_to_file_date.txt. If the file mapped is a regular file, then mapdir also reports its size in bytes and the file's md5 or sha256 checksum. Upon invocation, if no argument is passed to mapdir, then the utility maps the structure of the current working directory.
 
-The utility is useful in verifying the consistency of two (or more) file hierarchies, located on different devices, as the generated report files can subsequently be passed to the \fBdiff(1)\fR utility.
+The utility's main purpose lies in facilitating the verification of the consistency between two (or more) file hierarchies, that are located on different paths, as the generated report files can subsequently be passed to the \fBdiff(1)\fR utility.
 
 .SH OPTIONS
 .TP
@@ -22,19 +22,29 @@ omit reporting the name of the starting directory in the report file
 use the sha256sum message digest instead of md5sum
 .TP
 .B -n
-don't generate a savefile, i.e. only print to stdout. This option overrides the -s option
+only print to stdout, i.e. don't generate a savefile. This option overrides the -s option
+.TP
+.B -p
+print a tree of the directory. With this option no savefile is kept by default
 .TP
 .B -s savefile
 save the report in savefile
+.TP
+.B -t
+generate a statistical report of the files mapped
 .SH EXAMPLES
 .PP
-Verfiy the consistency between /path/to/dir1 and /path/to/dir2:
+1. Verfiy the consistency between /path/to/dir1 and /path/to/dir2:
 .PP
-mapdir -f /path/to/dir1
+mapdir -fh -s dir1_map.txt /path/to/dir1
 .br
-mapdir -f /path/to/dir2
+mapdir -fh -s dir2_map.txt /path/to/dir2
 .br
-diff ~/mapdir_path_to_dir1_date.txt ~/mapdir_path_to_dir2_date.txt
+diff ~/dir1_map.txt ~/dir2_map.txt
+.PP
+2. Map the structure of /path/to/dir as a directory tree view:
+.PP
+mapdir -fp /path/to/dir
 .SH BUGS
 Please report when found.
 .SH AUTHOR
