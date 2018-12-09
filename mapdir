@@ -275,7 +275,7 @@ process_new_dir()
 
 #
 # Log filetype to stdout and to SAVEFILE if desired. This function logs all filetypes except
-# for regular files, which need a little handling based on OS and accessability.
+# for regular files, which need a little more handling based on OS and accessability.
 #
 
 log_entry()
@@ -410,10 +410,19 @@ pretty_output()
 	# Now prettyprint the entry.
 	if [ $TOTAL_FILES -eq 1 ]; then
 		echo "$_box_hl$_box_hl$_entry"
+		if [ $n_flag -eq 0 ]; then
+			echo "$_box_hl$_box_hl$_entry" >> $SAVEFILE
+		fi
 	elif [ "$_symboltype" = "middleentry" ]; then
 		echo "$_space$_str$_box_mh$_entry"
+		if [ $n_flag -eq 0 ]; then
+			echo "$_space$_str$_box_mh$_entry" >> $SAVEFILE
+		fi
 	elif [ "$_symboltype" = "lastentry" ]; then
 		echo "$_space$_str$_box_rh$_entry"
+		if [ $n_flag -eq 0 ]; then
+			echo "$_space$_str$_box_rh$_entry" >> $SAVEFILE
+		fi
 	fi
 }
 
@@ -562,7 +571,7 @@ fi
 readfile $READLINK 1 $DEPTH
 
 #
-# At this point, we are done parsing. Now print statistics if desired as per the t flag.
+# At this point, we are done parsing. Now print statistics if desired as per the -t flag.
 #
 
 if [ $t_flag -eq 1 ]; then

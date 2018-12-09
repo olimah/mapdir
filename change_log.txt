@@ -8,8 +8,8 @@ Version 1.1: Released on 11.17.2018
 - Added a new switch: s - save the output to any savefile in ${HOME}.
 - Fixed a bug when reading the contents of empty directories.
 
-Version 1.2: Released on
-- Added a new switch: n - do not generate a savefile.
+Version 1.2: Released on 12.10.2018
+- Added a new switch: n - no savefile flag, i.e. only print to stdout.
 - Added a new switch: p - print the directory as a tree in a pretty format.
 - Added a new switch: t - statistics are no longer printed by default. Activate via -t.
 - Cleaned up some code.
