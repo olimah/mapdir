@@ -4,7 +4,7 @@ mapdir is a shell script utility that maps directory hierarchies and filetypes. 
 
 ### Testing
 -------------------------------------------
-If you'd like to test the utility prior to installing, you can use the sample files contained in the test folder of this repo. The folder setup under test signifies two different trees, that are expected to hold the same file content. In order to verify this, you can invoke mapdir as follows:
+If you'd like to test the utility prior to installing, you can use the sample files contained in the "test" folder of this repo. The two subfolders in the testdirectory stand for two different filetrees, that hold the same file content. To verify their mutual integrity, you can invoke mapdir as follows:
 
 ./mapdir -f -s filetree_1.txt ./test/tree1
 
