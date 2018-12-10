@@ -5,4 +5,11 @@ Version 1.0: Released on 03.24.2018
 Version 1.1: Released on 11.17.2018
 - Added a function that checks for the savefile's existence before overwriting.
 - Added out of the box support for FreeBSD, except for bash which needs to be installed via ports.
+- Added a new switch: s - save the output to any savefile in ${HOME}.
 - Fixed a bug when reading the contents of empty directories.
+
+Version 1.2: Released on 12.10.2018
+- Added a new switch: n - no savefile flag, i.e. only print to stdout.
+- Added a new switch: p - print the directory as a tree in a pretty format.
+- Added a new switch: t - statistics are no longer printed by default. Activate via -t.
+- Cleaned up some code.
