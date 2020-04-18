@@ -34,7 +34,7 @@ usage()
 	echo "usage: mapdircmp [-hkv] savefile1 dirtree1 savefile2 dirtree2"
 	echo "	-h: print usage information and exit"
 	echo "	-k: keep savefiles"
-	echo "	-v: ve more verbose"
+	echo "	-v: be more verbose"
 }
 
 process_files()
