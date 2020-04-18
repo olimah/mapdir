@@ -1,6 +1,6 @@
 ." Manpage for mapdir
 .".RI [ underlined ]
-.TH mapdir 1 "December 2018" "mapdir 1.2" "Manpage for mapdir"
+.TH mapdir 1 "April 2020" "mapdir 1.2.1" "Manpage for mapdir"
 .SH NAME
 mapdir \- Map directory structures
 .SH SYNOPSIS
@@ -8,7 +8,7 @@ mapdir \- Map directory structures
 .SH DESCRIPTION
 The mapdir utility is used to map the structure of files and most notably folder hierarchies. Unless overridden with the -n or -s options, the results are stored in a report file in the invoking user's home directory, according to the following naming convention: mapdir_path_to_file_date.txt. If the file mapped is a regular file, then mapdir also reports its size in bytes and the file's md5 or sha256 checksum. If upon invocation no argument is passed to mapdir, then the utility maps the structure of the current working directory.
 
-The utility mainly aims to facilitate verifying the consistency between two (or more) file hierarchies that contain the same files, as the generated report files can subsequently be passed to the \fBdiff(1)\fR utility. When using mapdir to this end, it should generally be invoked with the -f switch.
+The utility mainly aims to facilitate verifying the consistency between two (or more) file hierarchies that contain the same files, as the generated report files can subsequently be passed to the \fBdiff\fR(1) utility. When using mapdir to this end, it should generally be invoked with the -f switch.
 
 .SH OPTIONS
 .TP
@@ -45,6 +45,8 @@ diff ~/dir1_map.txt ~/dir2_map.txt
 2. Map the structure of /path/to/dir in a tree like view to stdout:
 .PP
 mapdir -fnp /path/to/dir
+.SH SEE ALSO
+\fBmapdir_comp\fR(1)
 .SH BUGS
 Please report when found.
 .SH AUTHOR
