@@ -1,6 +1,6 @@
 # mapdir
 -------------------------------------------
-mapdir is a shell script utility that maps directory hierarchies and filetypes. The primary aim, for which mapdir has been designed, is to check and verify the consistency between related data trees. mapdir has been released under a 2-Clause BSD License. See the manpage for more information and capabilities.
+mapdir is a shell script utility that maps directory hierarchies and filetypes. The primary aim for which mapdir has been designed, is to verify the consistency between related data trees that are assumed to be equal. mapdir is released under a 2-Clause BSD License. See the manpage for more information and capabilities.
 
 ### Testing
 -------------------------------------------
@@ -14,4 +14,4 @@ Now, that both folder hierarchies have been mapped, pass the report files to the
 
 diff ~/filetree_1.txt ~/filetree_2.txt
 
-mapdir is Copyright (c) 2015-2018 by Oliver Mahmoudi
+mapdir is Copyright (c) 2015-2020 by Oliver Mahmoudi
