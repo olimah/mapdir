@@ -1,0 +1,32 @@
+." Manpage for mapdir_comp
+.".RI [ underlined ]
+.TH mapdir_comp 1 "April 2020" "mapdir_comp" "Manpage for mapdir_comp"
+.SH NAME
+mapdir_comp \- Compare directory trees with mapdir
+.SH SYNOPSIS
+.BR "mapdir_comp " "[-hkv] savefile1 dirtree1 savefile2 dirtree2"
+.SH DESCRIPTION
+mapdir_comp is a wrapper script around the \fBmapdir\fR(1) utility, that makes the verification of directory trees, that are assumed to be equal, easier to perform. The savefile arguments will be generated in the invoking user's home directory by default. The following options are understood:
+
+.SH OPTIONS
+.TP
+.B -h
+print usage information and exit.
+.TP
+.B -k
+keep the savefiles.
+.TP
+.B -v
+be more verbose.
+.SH EXAMPLE
+.PP
+Verify the consistency between /path/to/dir1 and /path/to/dir2 and keep the savefiles:
+.PP
+mapdir_comp -k dir1.txt /path/to/dir1 dir2.txt /path/to/dir2
+.br
+.SH SEE ALSO
+\fBmapdir\fR(1)
+.SH BUGS
+Please report when found.
+.SH AUTHOR
+Oliver Mahmoudi (contact@olivermahmoudi.com)
