@@ -1,7 +1,7 @@
 Installation of mapdir:
 To install mapdir simply run "make install" as root.
 Running the install target will copy the files:
-mapdir and mapdir_comp to /usr/local/bin and install the respective manpages in
+mapdir and mapdircmp to /usr/local/bin and install the respective manpages in
 /usr/local/man/man1.
 
 Deinstalling backupuser:

@@ -5,12 +5,12 @@
 # Variables
 CP=cp
 BINARY_1=mapdir
-BINARY_2=mapdir_comp
+BINARY_2=mapdircmp
 INSTALL=/usr/bin/install -m 755
 INSTALLPATH=/usr/local/bin
 MANPATH=/usr/local/share/man/man1
 MANPAGE_1=mapdir.1
-MANPAGE_2=mapdir_comp.1
+MANPAGE_2=mapdircmp.1
 
 install:
 	$(INSTALL) $(BINARY_1) $(INSTALLPATH)

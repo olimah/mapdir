@@ -15,5 +15,5 @@ Version 1.2: Released on 12.10.2018
 - Cleaned up some code.
 
 Version 1.2.1: Released on xx.yy.2020
-- Added the mapdir_comp utility
-- Added manpage for mapdir_comp
+- Added the mapdircmp utility
+- Added manpage for mapdircmp
