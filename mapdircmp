@@ -115,7 +115,6 @@ usage()
 }
 
 # Point of entry
-
 while getopts ":hkv" opt ; do
         case $opt in
                 h)
