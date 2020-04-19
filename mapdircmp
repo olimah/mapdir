@@ -28,13 +28,37 @@
 
 k_flag=0			# keep savefiles flag
 v_flag=0			# verbose flag
+retval=0
 
-usage()
+check_savefile_existence()
 {
-	echo "usage: mapdircmp [-hkv] savefile1 dirtree1 savefile2 dirtree2"
-	echo "	-h: print usage information and exit"
-	echo "	-k: keep savefiles"
-	echo "	-v: be more verbose"
+	local _savefile _choice
+
+	_savefile=$1
+
+	if [ -e $_savefile ] ; then			# Confirm
+		echo -n "The savefile: $_savefile already exists. Do you want to overwrite it Yes/No? "
+		read -t 30 _choice				# We got 30 seconds to make a choice
+
+		case $_choice in
+
+		[Yy][Ee][Ss] | [Yy] )
+			if [ $v_flag -eq 1 ] ; then
+				rm -v $_savefile
+			else
+				rm $_savefile
+			fi
+			;;
+		[Nn][Oo] | [Nn] )
+			echo 'Aborted!'
+			exit 1
+			;;
+		*)
+			echo "No input received. Terminating."
+			exit 1
+			;;
+		esac
+	fi
 }
 
 process_files()
@@ -43,6 +67,8 @@ process_files()
 
 	_savefile=$1
 	_directory=$2
+
+	check_savefile_existence ~/$_savefile
 	
 	if [ $v_flag -eq 1 ] ; then
 		mapdir -fht -s $_savefile $_directory
@@ -53,6 +79,39 @@ process_files()
 				exit -1
 			fi
 	fi
+}
+
+check_files()
+{
+	local _file1 _file2 _retval
+
+	_file1=~/$1
+	_file2=~/$2
+
+	if [ $v_flag -eq 1 ] ; then
+		diff $_file1 $_file2
+	else
+		diff $_file1 $_file2 > /dev/null 2>&1
+	fi
+
+	_retval=$?
+
+	if [ $_retval -eq 0 ] && [ $v_flag -eq 1 ] ; then
+		echo "files are equal"
+	elif [ $_retval -ne 0 ] && [ $v_flag -eq 1 ] ; then
+		echo "files differ"
+		retval=100
+	elif [ $_retval -ne 0 ] && [ $v_flag -eq 0 ] ; then
+		retval=100
+	fi
+}
+
+usage()
+{
+	echo "usage: mapdircmp [-hkv] savefile1 dirtree1 savefile2 dirtree2"
+	echo "	-h: print usage information and exit"
+	echo "	-k: keep savefiles"
+	echo "	-v: be more verbose"
 }
 
 # Point of entry
@@ -90,16 +149,11 @@ process_files $1 $2
 # 2nd run
 process_files $3 $4
 
-# Check 4 equality
-diff ~/$1 ~/$3 > /dev/null 2>&1
-if [ $? -eq 0 ] ; then
-	echo "The files or directory trees are equal."
-else
-	echo "The files or directory trees differ."
-fi
+# Check for equality
+check_files $1 $3
 
 if [ $k_flag -eq 0 ] ; then
 	rm ~/$1 ~/$3
 fi
 
-exit 0
+exit $retval
