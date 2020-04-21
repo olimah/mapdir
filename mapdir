@@ -79,7 +79,6 @@ x_file=					# the exclude file itself
 #
 # This is the main function.
 #
-
 readfile()
 {
 	local _file _depth _psymbol _pnoes _pbinstring
@@ -90,7 +89,7 @@ readfile()
 	_pnoes=$5
 	_pbinstring=$6
 
-	# Check for excludes
+	# Continue?
 	$(check_excludes $_file)
 	if [ $? -eq 1 ] ; then
 		return
@@ -229,9 +228,8 @@ readfile()
 }
 
 #
-# Check for files that are to be excluded from the search process. Passed via -e and/or -x
+# Check for files that are to be excluded from the search process. Passed via -e and/or -x.
 #
-
 check_excludes()
 {
 	local _file_to_check
@@ -256,7 +254,6 @@ check_excludes()
 # It checks whether or nor the new directory has contents and calls
 # readline again.
 #
-
 process_new_dir()
 {
 	local _dir _contents _depth _entry _newpath _noes _pcontents _pdir _pnoes _psstring
@@ -313,7 +310,6 @@ process_new_dir()
 # filetypes except for regular files, which need a little more handling based
 # on OS and accessability.
 #
-
 log_entry()
 {
 	local _entry _filetype _logtype
@@ -336,7 +332,6 @@ log_entry()
 #
 # This function can be considered to be the log_entry function for regular files.
 #
-
 get_file_stats()
 {
 	local _file
@@ -377,7 +372,6 @@ get_file_stats()
 #
 # When invoking mapdir with the -f switch, we only log the filename.
 #
-
 get_filename()
 {
 	local _filename
@@ -395,7 +389,6 @@ get_filename()
 # Print the structure of the argument passed to mapdir to stdout as a pretty output tree.
 # Invoked with the -p switch. Needs -f to work.
 #
-
 pretty_output()
 {
 	local _entry _space  _symboltype _binstring _str _box_rh _box_hl _box_vl _box_mh
@@ -455,7 +448,7 @@ check_savefile_existence()
 		case $choice in
 
 		[Yy][Ee][Ss] | [Yy] )
-			rm -v $1
+			return
 			;;
 		[Nn][Oo] | [Nn] )
 			echo 'Aborted!'
@@ -472,12 +465,11 @@ check_savefile_existence()
 usage()
 {
 	echo "usage: mapdir [-dfhnpt] [-e excludes] [-s savefile] \
-			[-x excludes_from_file] [file]||[directory]"
+[-x excludes_from_file] [file]||[directory]"
 	exit 1
 }
 
 ### Point of entry ###
-
 while getopts ":de:fhnps:tx:" opt ; do
 	case $opt in
 		d)
@@ -520,7 +512,7 @@ done
 
 shift $((OPTIND-1))
 
-# Sanity checks
+# If -p == 1 => -f == 1
 if [ $p_flag -eq 1 ] && [ $f_flag -eq 0 ] ; then
 	echo "The -p option can only be used with the -f option."
 	exit
@@ -532,7 +524,7 @@ if ([ $p_flag -eq 1 ] && [ $e_flag -eq 1 ]) || ([ $p_flag -eq 1 ] && [ $x_flag -
 	exit
 fi
 
-# Process options
+# Process the other options
 if [ $d_flag -eq 0 ]; then
 	shopt -s dotglob nullglob
 else
@@ -561,13 +553,12 @@ fi
 #
 # If an argument is given, take it, otherwise process the current directory.
 #
-
 if [ $# -eq 1 ]; then
-	if [ ! -e $(readlink -f $1) ]; then
- 		echo The file `readlink -f $1` doesn\'t exist.
+	READLINK=$(readlink -f $1)
+	if [ ! -e $READLINK ]; then
+ 		echo "The file: $READLINK doesn\'t exist."
 		usage
 	fi
-	READLINK=$(readlink -f $1)
 	if [ $n_flag -eq 0 ]; then
 		if [ $s_flag -eq 0 ]; then
 			SAVEFILE=~/mapdir$(readlink -f $1 | sed s#/#_#g)_$DATE.txt
@@ -615,7 +606,6 @@ readfile $READLINK 1 $DEPTH
 #
 # At this point, we are done parsing. Now print statistics if desired as per the -t flag.
 #
-
 if [ $t_flag -eq 1 ]; then
 	echo
 	if [ $n_flag -eq 0 ]; then
