@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2015-2018 Oliver Mahmoudi
+# Copyright (c) 2015-2020 Oliver Mahmoudi
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,7 @@
 
 # Functions:
 # readfile()
+# check_excludes()
 # process_new_dir()
 # log_entry()
 # get_file_stats()
@@ -40,10 +41,10 @@
 READLINK=
 CHECKSUM=
 DATE=$(date +%m%d%Y)
-OS_TYPE=$(uname)
 DEPTH=0
 SAVEFILE=
 STRLEN=
+EXCLUDES=
 
 # Global variables that are used for the statistics at the end of the program.
 DIRS=0
@@ -63,6 +64,8 @@ export LC_COLLATE=C
 
 # Global flags for getopts:
 d_flag=0				# dotglob flag
+e_flag=0				# exclude files flag
+e_list=					# list of files to be excluded
 f_flag=0				# omit startdir flag
 h_flag=0				# use sha256sum flag
 n_flag=0				# no savefile flag
@@ -70,6 +73,8 @@ p_flag=0				# display output as directory tree
 s_flag=0				# alternate savefile flag
 s_file=					# the alternate savefile itself
 t_flag=0				# print statistics flag
+x_flag=0				# excludes from file flag
+x_file=					# the exclude file itself
 
 #
 # This is the main function.
@@ -84,6 +89,11 @@ readfile()
 	_psymbol=$4
 	_pnoes=$5
 	_pbinstring=$6
+
+	# Check for excludes
+	if [ `check_excludes $_file` = 1 ] ; then
+		return
+	fi
 
 	if [ -d $_file ]; then
 		if [ -r $_file ] && [ -x $_file ]; then
@@ -218,16 +228,36 @@ readfile()
 }
 
 #
-# In case we encounter a new directory, this function gets called. It checks whether or nor
-# the new directory has contents and calls readline again.
+# Check for files that are to be excluded from the search process.
+#
+
+check_excludes()
+{
+	local _file_to_check
+
+	_file_to_check=$1
+
+	for i in $EXCLUDES ; do
+		if [ "$_file_to_check" = "$i" ] ; then
+			return 1
+		fi
+	done
+
+	return 0
+}
+
+#
+# In case we encounter a new directory, this function gets called.
+# It checks whether or nor the new directory has contents and calls
+# readline again.
 #
 
 process_new_dir()
 {
 	local _dir _contents _depth _entry _newpath _noes _pcontents _pdir _pnoes _psstring
 
-	# For the pretty_output function, first examine all the parent directories to find out
-	# what type of entries we have and set binary flags accordingly.
+	# For the pretty_output function, first examine all the parent directories,
+	# to find out what type of entries we have and set binary flags accordingly.
 	_depth=$2
 	if [ $p_flag -eq 1 ] && [ $_depth -ge 1 ]; then
 		_pdir=$1
@@ -274,8 +304,9 @@ process_new_dir()
 }
 
 #
-# Log filetype to stdout and to SAVEFILE if desired. This function logs all filetypes except
-# for regular files, which need a little more handling based on OS and accessability.
+# Log filetype to stdout and to SAVEFILE if desired. This function logs all
+# filetypes except for regular files, which need a little more handling based
+# on OS and accessability.
 #
 
 log_entry()
@@ -308,50 +339,32 @@ get_file_stats()
 	_file=$1
 
 	if [ "$2" = "readable" ] && [ "$3" = "fullpath" ]; then
-		if [ "$OS_TYPE" = "Linux" ] ; then
-			echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-			${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'`
-				if [ $n_flag -eq 0 ]; then
-					echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'` >> $SAVEFILE
-				fi
-		elif [ "$OS_TYPE" = "FreeBSD" ] ; then
-			echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-			${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'`
-				if [ $n_flag -eq 0 ]; then
-					echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-					${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'` >> $SAVEFILE
-				fi
-		fi
+		echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+		${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'`
+			if [ $n_flag -eq 0 ]; then
+				echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+				${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'` >> $SAVEFILE
+			fi
 	elif [ "$2" = "readable" ] && [ "$3" = "filename_only" ]; then
-		if [ "$OS_TYPE" = "Linux" ] ; then
-			echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
+		echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
 			${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'`
-			if [ $n_flag -eq 0 ]; then
-				echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-		${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'` >> $SAVEFILE
-			fi
-		elif [ "$OS_TYPE" = "FreeBSD" ] ; then
+		if [ $n_flag -eq 0 ]; then
 			echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-			${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'`
-			if [ $n_flag -eq 0 ]; then
-				echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-				${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $4 }'` >> $SAVEFILE
-			fi
+				${CHECKSUM}: `${CHECKSUM} $_file | awk '{ print $1 }'` >> $SAVEFILE
 		fi
 	elif ["$2" = "unreadable" ] && [ "$3" = "fullpath" ]; then
 		echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-		${CHECKSUM}: not readable
+			${CHECKSUM}: not readable
 		if [ $n_flag -eq 0 ]; then
 			echo $_file - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-			${CHECKSUM}: not readable >> $SAVEFILE
+				${CHECKSUM}: not readable >> $SAVEFILE
 		fi
 	elif ["$2" = "unreadable" ] && [ "$3" = "filename_only" ]; then
 		echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-		${CHECKSUM}: not readable
+			${CHECKSUM}: not readable
 		if [ $n_flag -eq 0 ]; then
 			echo $(get_filename $_file) - regular file - Size: `ls -l $_file | awk '{ print $5 }'` bytes - \
-			${CHECKSUM}: not readable >> $SAVEFILE
+				${CHECKSUM}: not readable >> $SAVEFILE
 		fi
 	fi
 }
@@ -453,16 +466,20 @@ check_savefile_existence()
 
 usage()
 {
-	echo usage: mapdir [-dfhnpt] [-s savefile] [file]||[directory]
+	echo "usage: mapdir [-dfhnpt] [-e excludes] [-s savefile] [-x excludes_from_file] [file]||[directory]"
 	exit 1
 }
 
 ### Point of entry ###
 
-while getopts ":dfhnps:t" opt ; do
+while getopts ":de:fhnps:tx:" opt ; do
 	case $opt in
 		d)
 			d_flag=1
+			;;
+		s)
+			e_flag=1
+			e_list=$OPTARG
 			;;
 		f)
 			f_flag=1
@@ -482,6 +499,10 @@ while getopts ":dfhnps:t" opt ; do
 			;;
 		t)
 			t_flag=1
+			;;
+		x)
+			x_flag=1
+			x_file=$OPTARG
 			;;
 		\?)
 			echo "unkown flag: -$OPTARG."
@@ -505,18 +526,10 @@ else
 	shopt -s nullglob
 fi
 
-if [ "${OS_TYPE}" = "Linux" ] ; then
-	if [ $h_flag -eq 1 ]; then				# Change CHECKSUM to sha256sum
-		CHECKSUM=sha256sum
-	else
-		CHECKSUM=md5sum
-	fi
-elif [ "${OS_TYPE}" = "FreeBSD" ] ; then
-	if [ $h_flag -eq 1 ]; then				# Change CHECKSUM to sha256
-		CHECKSUM=sha256
-	else
-		CHECKSUM=md5
-	fi
+if [ $h_flag -eq 1 ]; then				# Change CHECKSUM to sha256sum
+	CHECKSUM=sha256sum
+else
+	CHECKSUM=md5sum
 fi
 
 #
@@ -555,17 +568,20 @@ else
 	fi
 fi
 
-# When calling the readline function for the first time, we pass a second argument of "1" to it.
-# This serves the purpose of pleasing the diff utility when invoking mapdir with the -f switch
-# and having a directory as the first argument. If we would map the starting directory to the
-# $SAVEFILE and would later on compare it with another the $SAVEFILE, the diff utility would
-# obviously exit with a return value other than 0, even though the contents of the directories
-# may be truly equivalent. Consider for example the folders:
+# When calling the readline function for the first time, we pass a second argument
+# of "1" to it. This serves the purpose of pleasing the diff utility when invoking
+# mapdir with the -f switch and having a directory as the first argument. If we would
+# map the starting directory to the $SAVEFILE and would later on compare it with
+# another the $SAVEFILE, the diff utility would obviously exit with a return value
+# other than 0, even though the contents of the directories may be truly equivalent.
+# Consider for example the folders:
+#
 # /media/filesystem_a and /media/filesystem_b that both have the same content.
 #
-# The logic is as follows: if the file is a folder, then the readlink function detects this in
-# the "is directory" part and skips mapping its occurence to the $SAVEFILE. For subsequent calls
-# to readlink we will pass a second argument of "0" to the function, which this time maps it.
+# The logic is as follows: if the file is a folder, then the readlink function detects
+# this in the "is directory" part and skips mapping its occurence to the $SAVEFILE.
+# For subsequent calls to readlink we will pass a second argument of "0" to the
+# function, which this time maps it.
 
 # Start processing the file/folder...
 readfile $READLINK 1 $DEPTH
