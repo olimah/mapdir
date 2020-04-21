@@ -91,7 +91,8 @@ readfile()
 	_pbinstring=$6
 
 	# Check for excludes
-	if [ `check_excludes $_file` = 1 ] ; then
+	$(check_excludes $_file)
+	if [ $? -eq 1 ] ; then
 		return
 	fi
 
@@ -228,7 +229,7 @@ readfile()
 }
 
 #
-# Check for files that are to be excluded from the search process.
+# Check for files that are to be excluded from the search process. Passed via -e and/or -x
 #
 
 check_excludes()
@@ -237,12 +238,16 @@ check_excludes()
 
 	_file_to_check=$1
 
+	# We need the "standard" IFS to parse the array. Otherwise it won't work...
+	IFS=$SAVEIFS
 	for i in $EXCLUDES ; do
 		if [ "$_file_to_check" = "$i" ] ; then
+			IFS=$(echo -en "\n\b")
 			return 1
 		fi
 	done
 
+	IFS=$(echo -en "\n\b")
 	return 0
 }
 
@@ -466,7 +471,8 @@ check_savefile_existence()
 
 usage()
 {
-	echo "usage: mapdir [-dfhnpt] [-e excludes] [-s savefile] [-x excludes_from_file] [file]||[directory]"
+	echo "usage: mapdir [-dfhnpt] [-e excludes] [-s savefile] \
+			[-x excludes_from_file] [file]||[directory]"
 	exit 1
 }
 
@@ -477,7 +483,7 @@ while getopts ":de:fhnps:tx:" opt ; do
 		d)
 			d_flag=1
 			;;
-		s)
+		e)
 			e_flag=1
 			e_list=$OPTARG
 			;;
@@ -520,6 +526,13 @@ if [ $p_flag -eq 1 ] && [ $f_flag -eq 0 ] ; then
 	exit
 fi
 
+# Allowing (-p && -e) || (-p && -x) would break the formatting of the output tree.
+if ([ $p_flag -eq 1 ] && [ $e_flag -eq 1 ]) || ([ $p_flag -eq 1 ] && [ $x_flag -eq 1 ]) ; then
+	echo "The -p option cannot be used with the -e or -x options."
+	exit
+fi
+
+# Process options
 if [ $d_flag -eq 0 ]; then
 	shopt -s dotglob nullglob
 else
@@ -530,6 +543,19 @@ if [ $h_flag -eq 1 ]; then				# Change CHECKSUM to sha256sum
 	CHECKSUM=sha256sum
 else
 	CHECKSUM=md5sum
+fi
+
+if [ $e_flag -eq 1 ]; then
+	for i in $e_list ; do
+		EXCLUDES="$i $EXCLUDES"
+	done
+fi
+
+if [ $x_flag -eq 1 ]; then
+	while read line
+	do
+		EXCLUDES="$line $EXCLUDES"
+	done < "$x_file"
 fi
 
 #

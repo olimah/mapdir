@@ -17,7 +17,7 @@ Version 1.2: Released on 12.10.2018
 Version 1.2.1: Released on xx.yy.2020
 - Added a new switch to mapdir: e - exclude from a list of files passed upon invocation 
 - Added a new switch to mapdir: x - exclude from an exclude_file
-- Added a new function: check_excludes
+- Added a new function to mapdir: check_excludes
 - Added the mapdircmp utility
 - Added manpage for mapdircmp
-- Discountinued out of the box support for Operating Systems other than Linux
+- Cleaned up some code.
