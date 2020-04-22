@@ -74,7 +74,7 @@ s_flag=0				# alternate savefile flag
 s_file=					# the alternate savefile itself
 t_flag=0				# print statistics flag
 x_flag=0				# excludes from file flag
-x_file=					# the exclude file itself
+x_file=					# the excludes file itself
 
 #
 # This is the main function.
@@ -465,7 +465,7 @@ check_savefile_existence()
 usage()
 {
 	echo "usage: mapdir [-dfhnpt] [-e excludes] [-s savefile] \
-[-x excludes_from_file] [file]||[directory]"
+[-x excludes_file] [file]||[directory]"
 	exit 1
 }
 

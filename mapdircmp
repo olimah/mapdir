@@ -65,7 +65,7 @@ check_savefile_existence()
 
 process_files()
 {
-	local _savefile _directory _excludefile
+	local _savefile _directory _excludes_file
 
 	_savefile=$1
 	_directory=$2
@@ -74,17 +74,17 @@ process_files()
 	
 	if [ $v_flag -eq 1 ] ; then
 		if [ $x_flag -eq 1 ] ; then
-			_excludefile=$3
-			mapdir -fht -s $_savefile -x $_excludefile $_directory
+			_excludes_file=$3
+			mapdir -fht -s $_savefile -x $_excludes_file $_directory
 		else
 			mapdir -fht -s $_savefile $_directory
 		fi
 	else
 		if [ $x_flag -eq 1 ] ; then
-			_excludefile=$3
-			mapdir -fht -s $_savefile -x $_excludefile $_directory > /dev/null 2>&1
+			_excludes_file=$3
+			mapdir -fht -s $_savefile -x $_excludes_file $_directory > /dev/null 2>&1
 			if [ $? -ne 0 ] ; then
-				echo "Error while running: mapdir -fht -s $_savefile -x $_excludefile $_directoy"
+				echo "Error while running: mapdir -fht -s $_savefile -x $_excludes_file $_directoy"
 				exit -1
 			fi
 		else
@@ -124,11 +124,11 @@ check_files()
 
 usage()
 {
-	echo "usage: mapdircmp [-hkv] [-x excludes_from_file] savefile1 dirtree1 savefile2 dirtree2"
+	echo "usage: mapdircmp [-hkv] [-x excludes_file] savefile1 dirtree1 savefile2 dirtree2"
 	echo "	-h: print usage information and exit"
 	echo "	-k: keep savefiles"
 	echo "	-v: be more verbose"
-	echo "	-x excludes_from_file: files and folders to be excluded"
+	echo "	-x excludes_file: files and folders to be excluded"
 }
 
 # Point of entry

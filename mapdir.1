@@ -4,7 +4,7 @@
 .SH NAME
 mapdir \- Map directory structures
 .SH SYNOPSIS
-.BR "mapdir " "[-dfhnpt] [-e excludes] [-s savefile] [-x excludes_from_file] [/path/to/file]"
+.BR "mapdir " "[-dfhnpt] [-e excludes] [-s savefile] [-x excludes_file] [/path/to/file]"
 .SH DESCRIPTION
 The mapdir utility is used to map the structure of files and most notably folder hierarchies. Unless overridden with the -n or -s options, the results are stored in a report file in the invoking user's home directory, according to the following naming convention: mapdir_path_to_file_date.txt. If the file mapped is a regular file, then mapdir also reports its size in bytes and the file's md5 or sha256 checksum. If upon invocation no argument is passed to mapdir, then the utility maps the structure of the current working directory.
 
@@ -36,8 +36,8 @@ save the report in ${HOME}/savefile.
 .B -t
 generate a statistical report of the kinds of files mapped.
 .TP
-.B -x excludes_from_file
-read the files to be excluded from excludes_from_file. Entries are expected to contain the full path to file and are read line by line.
+.B -x excludes_file
+read the files to be excluded from excludes_file. Entries are expected to contain the full path to file and are read line by line.
 .SH EXAMPLES
 .PP
 1. Verify the consistency between /path/to/dir1 and /path/to/dir2:
