@@ -24,10 +24,12 @@
 # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-### mapdircmp - a comparison utility for mapdir
+### mapdircmp - a comparison utility for mapdir(1)
 
 k_flag=0			# keep savefiles flag
 v_flag=0			# verbose flag
+x_flag=0			# excludes
+x_file=
 exit_status=0
 
 check_savefile_existence()
@@ -46,7 +48,7 @@ check_savefile_existence()
 			if [ $v_flag -eq 1 ] ; then
 				rm -v $_savefile
 			else
-				rm $_savefile
+				:> $_savefile
 			fi
 			;;
 		[Nn][Oo] | [Nn] )
@@ -63,7 +65,7 @@ check_savefile_existence()
 
 process_files()
 {
-	local _savefile _directory
+	local _savefile _directory _excludefile
 
 	_savefile=$1
 	_directory=$2
@@ -71,13 +73,27 @@ process_files()
 	check_savefile_existence ~/$_savefile
 	
 	if [ $v_flag -eq 1 ] ; then
-		mapdir -fht -s $_savefile $_directory
+		if [ $x_flag -eq 1 ] ; then
+			_excludefile=$3
+			mapdir -fht -s $_savefile -x $_excludefile $_directory
+		else
+			mapdir -fht -s $_savefile $_directory
+		fi
 	else
-		mapdir -fht -s $_savefile $_directory > /dev/null 2>&1
+		if [ $x_flag -eq 1 ] ; then
+			_excludefile=$3
+			mapdir -fht -s $_savefile -x $_excludefile $_directory > /dev/null 2>&1
+			if [ $? -ne 0 ] ; then
+				echo "Error while running: mapdir -fht -s $_savefile -x $_excludefile $_directoy"
+				exit -1
+			fi
+		else
+			mapdir -fht -s $_savefile $_directory > /dev/null 2>&1
 			if [ $? -ne 0 ] ; then
 				echo "Error while running: mapdir -fht -s $_savefile $_directoy"
 				exit -1
 			fi
+		fi
 	fi
 }
 
@@ -108,14 +124,15 @@ check_files()
 
 usage()
 {
-	echo "usage: mapdircmp [-hkv] savefile1 dirtree1 savefile2 dirtree2"
+	echo "usage: mapdircmp [-hkv] [-x excludes_from_file] savefile1 dirtree1 savefile2 dirtree2"
 	echo "	-h: print usage information and exit"
 	echo "	-k: keep savefiles"
 	echo "	-v: be more verbose"
+	echo "	-x excludes_from_file: files and folders to be excluded"
 }
 
 # Point of entry
-while getopts ":hkv" opt ; do
+while getopts ":hkvx:" opt ; do
         case $opt in
                 h)
                         usage
@@ -126,6 +143,10 @@ while getopts ":hkv" opt ; do
                         ;;
                 v)
                         v_flag=1		# be more verbose
+                        ;;
+                x)
+                        x_flag=1		# excludes from file flag
+						x_file=$OPTARG
                         ;;
                 \?)
                         echo "unkown flag: -$OPTARG."
@@ -143,10 +164,18 @@ if [ $# -ne 4 ] ; then
 fi
 
 # 1st run
-process_files $1 $2
+if [ $x_flag -eq 1 ] ; then
+	process_files $1 $2 $x_file
+else
+	process_files $1 $2
+fi
 
 # 2nd run
-process_files $3 $4
+if [ $x_flag -eq 1 ] ; then
+	process_files $3 $4 $x_file
+else
+	process_files $3 $4
+fi
 
 # Check for equality
 check_files $1 $3

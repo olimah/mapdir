@@ -15,7 +15,7 @@ The utility mainly aims to facilitate verifying the consistency between two (or 
 .B -d
 only parse non-hidden files.
 .TP
-.B -e
+.B -e excludes
 list of files to be excluded.
 .TP
 .B -f
@@ -28,16 +28,16 @@ use the sha256sum message digest instead of md5sum.
 only print to stdout, i.e. don't generate a savefile. This option overrides the -s option.
 .TP
 .B -p
-print a tree view of the directory. This option requires the -f option to work.
+print a tree view of the directory. This option requires the -f option to work and won't work with the -e or -x switches activated.
 .TP
 .B -s savefile
-save the report in savefile.
+save the report in ${HOME}/savefile.
 .TP
 .B -t
 generate a statistical report of the kinds of files mapped.
 .TP
-.B -x
-read the files to be excluded from excludes_from_file. The file is read line by line. This should be a standard ASCII file.
+.B -x excludes_from_file
+read the files to be excluded from excludes_from_file. Entries are expected to contain the full path to file and are read line by line.
 .SH EXAMPLES
 .PP
 1. Verify the consistency between /path/to/dir1 and /path/to/dir2:
@@ -51,6 +51,10 @@ diff ~/dir1_map.txt ~/dir2_map.txt
 2. Map the structure of /path/to/dir in a tree like view to stdout:
 .PP
 mapdir -fnp /path/to/dir
+.PP
+3. Map the structure of /usr but exclude directories /usr/games and /usr/include:
+.PP
+mapdir -s usr_directory.txt -e "/usr/games /usr/include" /usr
 .SH SEE ALSO
 \fBmapdircmp\fR(1)
 .SH BUGS

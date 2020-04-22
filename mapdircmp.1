@@ -4,7 +4,7 @@
 .SH NAME
 mapdircmp \- Compare directory trees with mapdir(1)
 .SH SYNOPSIS
-.BR "mapdircmp " "[-hkv] savefile1 dirtree1 savefile2 dirtree2"
+.BR "mapdircmp " "[-hkv] [-x excludes_from_file] savefile1 dirtree1 savefile2 dirtree2"
 .SH DESCRIPTION
 mapdircmp is a wrapper script around the \fBmapdir\fR(1) utility, that makes the verification of directory trees, that are assumed to be equal, easier to perform. The savefile arguments will be generated in the invoking user's home directory by default. The following options are understood:
 
@@ -18,6 +18,9 @@ keep the savefiles.
 .TP
 .B -v
 be more verbose.
+.TP
+.B -x excludes_from_file
+read the files to be excluded from excludes_from_file. Entries are expected to contain the full path to file and are read line by line.
 .SH EXAMPLE
 .PP
 Verify the consistency between /path/to/dir1 and /path/to/dir2 and keep the savefiles:
